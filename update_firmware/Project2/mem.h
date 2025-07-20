@@ -2,6 +2,7 @@
 #define __MEM_H__
 
 #include <windows.h>
+#include <stdio.h>
 
 /* Config */
 #define DEBUG                       0

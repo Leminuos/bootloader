@@ -26,6 +26,31 @@ static UINT32 CalculateCRC(_In_ UINT8* data, _In_ UINT32 length)
     return crc;
 }
 
+static void print_progress(int current, int max) {
+    const int bar_width = 50;
+    static int last_percent_displayed = -1;
+
+    double percent = (double)current * 100.0 / max;
+    int percent_int = (int)(percent * 100); // Làm tròn đến phần trăm x100 (ví dụ 4226)
+
+    // Chỉ cập nhật nếu phần trăm thực sự thay đổi (giúp mượt hơn)
+    if (percent_int == last_percent_displayed)
+        return;
+
+    last_percent_displayed = percent_int;
+
+    int filled = (int)(percent * bar_width / 100.0);
+
+    char bar[128];
+    int n = snprintf(bar, sizeof(bar), "\r[");
+    for (int i = 0; i < bar_width; ++i)
+        n += snprintf(bar + n, sizeof(bar) - n, "%c", (i < filled) ? '#' : '-');
+    snprintf(bar + n, sizeof(bar) - n, "] %6.2f%%", percent);
+
+    printf("%s", bar);
+    fflush(stdout);
+}
+
 static BOOLEAN SendRequest(UINT8 command, UINT32 address, UINT8 length, UINT8* data)
 {
     BOOL result = FALSE;
@@ -125,7 +150,10 @@ VOID BootMemErase(UINT32 Size)
     {
         SendRequest(BOOT_REQ_CMD_ERASE, page, 0, NULL);
         ReceiveResponse(NULL, 0);
+        print_progress(page, pages - 1);
     }
+
+    printf("\r\n\r\n");
 }
 
 VOID BootMemWrite(UINT8* image, UINT32 Size)
@@ -159,6 +187,8 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
             if (!result) continue;
             result = ReceiveResponse(NULL, 0);
         } while (!result);
+
+        print_progress(i, blocks + 1);
     }
 
     cnt = 0;
@@ -176,6 +206,9 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
         if (!result) continue;
         result = ReceiveResponse(NULL, 0);
     } while (!result);
+
+    print_progress(blocks + 1, blocks + 1);
+    printf("\r\n\r\n");
 }
 
 VOID BootMemRead(UINT8* image, UINT32 Size)
@@ -205,6 +238,8 @@ VOID BootMemRead(UINT8* image, UINT32 Size)
             if (!result) continue;
             result = ReceiveResponse(image + (MAX_BOOT_BUFFER_SIZE * i), MAX_BOOT_BUFFER_SIZE);
         } while (!result);
+
+        print_progress(i, blocks + 1);
     }
 
     cnt = 0;
@@ -218,4 +253,7 @@ VOID BootMemRead(UINT8* image, UINT32 Size)
         if (!result) continue;
         result = ReceiveResponse(image + (MAX_BOOT_BUFFER_SIZE * blocks), nonblock);
     } while (!result);
+
+    print_progress(blocks + 1, blocks + 1);
+    printf("\r\n\r\n");
 }

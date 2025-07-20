@@ -6,21 +6,35 @@
 #include "hid.h"
 #include "mem.h"
 
+#define MAX_COUNTER_FAIL    1000
+
 VOID Usage(VOID);
 
 int main(int argc, char** argv)
 {
+    int cnt = 0;
+
     if (argc < 3)
     {
         Usage();
         return 1;
     }
 
-    if (FindHidDevice() == HID_FAILED)
+    printf("Please plug usb device");
+
+    while (FindHidDevice() == HID_FAILED)
     {
-        printf("Failed find device\r\n");
-        return 2;
+        ++cnt;
+        if (cnt == MAX_COUNTER_FAIL)
+        {
+            printf("\r\ntimeout\r\n");
+            return 2;
+        }
+        printf(".");
+        Sleep(20);
     }
+
+    printf("\r\nUsb device found\r\n");
 
     if (strcmp(argv[1], "-f") == 0)
     {
@@ -28,8 +42,6 @@ int main(int argc, char** argv)
     }
 
     CloseHandle(hDevice);
-
-    system("pause");
 
 	return 0;
 }
@@ -99,7 +111,7 @@ VOID BootFlashImage(CHAR* FileName)
     free(WriteImage);
     fclose(FileHandle);
 
-    FileHandle = fopen("read_image", "wb");
+    FileHandle = fopen("read_image.bin", "wb");
     fwrite(ReadImage, sizeof(UINT8), FileSize, FileHandle);
     fclose(FileHandle);
 }

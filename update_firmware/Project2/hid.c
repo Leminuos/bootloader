@@ -15,6 +15,7 @@ HANDLE hDevice;
 BOOLEAN FindHidDevice(VOID)
 {
     GUID hidguid;
+    BOOL ret = 1;
     DWORD index = 0;
     DWORD requiredSize = 0;
     HANDLE FindDevice = NULL;
@@ -38,7 +39,7 @@ BOOLEAN FindHidDevice(VOID)
 
     if (deviceInfoSet == INVALID_HANDLE_VALUE) {
         printf("Lỗi khi lấy danh sách thiết bị HID.\n");
-        return 1;
+        return ret;
     }
 
     // Duyệt qua từng thiết bị
@@ -65,7 +66,7 @@ BOOLEAN FindHidDevice(VOID)
         if (deviceDetailData == NULL)
         {
             printf("Allocate failed\n");
-            return 1;
+            return ret;
         }
 
         deviceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
@@ -97,6 +98,7 @@ BOOLEAN FindHidDevice(VOID)
                         filePath = (LPCWSTR)malloc(wcslen(deviceDetailData->DevicePath) * sizeof(wchar_t));
                         if (filePath) wcscpy(filePath, deviceDetailData->DevicePath);
                         hDevice = FindDevice;
+                        ret = 0;
                         break;
                     }
                 }
@@ -112,5 +114,5 @@ BOOLEAN FindHidDevice(VOID)
     // Giải phóng tài nguyên
     SetupDiDestroyDeviceInfoList(deviceInfoSet);
 
-    return 0;
+    return ret;
 }
