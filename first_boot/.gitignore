@@ -1,0 +1,13 @@
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+Objects/
+Listings/
+DebugConfig/
+Build/
+Bootloader/src/key_data.c
+*.o
+*.d
+*.crf
+*.lst
+*.pem
+*.bin

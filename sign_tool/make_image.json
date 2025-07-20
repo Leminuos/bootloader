@@ -1,0 +1,30 @@
+{
+    "file_output": "firmware.bin",
+    "number": 2,
+    "firmware": [
+        {
+            "file_bin": "second_boot.bin",
+            "start_offset": "0x1000",
+            "header-data": {
+                "header": "0x424C4443",
+                "version_major": "0x02",
+                "version_minor": "0x03",
+                "reserved": "0xFFFF",
+                "header_size": "0x20",
+                "entry_point": "0x08008000"
+            }
+        },
+        {
+            "file_bin": "application.bin",
+            "start_offset": "0x10000",
+            "header-data": {
+                "header": "0x424C4443",
+                "version_major": "0x02",
+                "version_minor": "0x03",
+                "reserved": "0xFFFF",
+                "header_size": "0x20",
+                "entry_point": "0x20000000"
+            }
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+.vscode
+*.pem
+*.bin
+sign_tool/key_data.c

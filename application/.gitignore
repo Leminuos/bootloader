@@ -1,0 +1,10 @@
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+Objects/
+Listings/
+DebugConfig/
+Build/
+*.o
+*.d
+*.crf
+*.lst
