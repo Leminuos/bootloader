@@ -1,4 +1,5 @@
 .vscode
 *.pem
 *.bin
+*.log
 sign_tool/key_data.c

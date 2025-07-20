@@ -1,25 +1,28 @@
 @echo off
 
-set PEM_KEY = private_key
+call env.bat
 
 cd sign_tool
 
-if not exist "%PEM_KEY%" (
-    python gen_key.py
+if not exist %PEM_KEY% (
+    python gen_key.py >> "%LOG_FILE%" 2>&1
 )
 
-python make_image.py -p
-copy /Y .\key_data.c ..\first_boot\Bootloader\src\key_data.c
-copy /Y .\key_data.c ..\second_boot\Bootloader\src\key_data.c
+type nul > "%LOG_FILE%"
+
+python make_image.py -p >> "%LOG_FILE%" 2>&1
+copy /Y .\key_data.c ..\first_boot\Bootloader\src\key_data.c >> "%LOG_FILE%" 2>&1
+copy /Y .\key_data.c ..\second_boot\Bootloader\src\key_data.c >> "%LOG_FILE%" 2>&1
 
 cd ..\application
-make rebuild
-copy /Y Build\application.bin ..\sign_tool\application.bin
+make rebuild >> "%LOG_FILE%" 2>&1
+copy /Y Build\application.bin ..\sign_tool\application.bin >> "%LOG_FILE%" 2>&1
 
 cd ..\second_boot
-make rebuild
-copy /Y Build\second_boot.bin ..\sign_tool\second_boot.bin
+make rebuild >> "%LOG_FILE%" 2>&1
+copy /Y Build\second_boot.bin ..\sign_tool\second_boot.bin >> "%LOG_FILE%" 2>&1
 
 cd ..\sign_tool
-python make_image.py -f
-copy /Y .\firmware.bin ..\update_firmware\x64\Debug\firmware.bin
+python make_image.py -f >> "%LOG_FILE%" 2>&1
+
+firmware.exe -f firmware.bin
