@@ -2,6 +2,11 @@
 
 call env.bat
 
+if not exist sign_tool\firmware.exe (
+    call vs_build.bat
+    copy /Y update_firmware\x64\Release\firmware.exe sign_tool\firmware.exe
+)
+
 cd sign_tool
 
 if not exist %PEM_KEY% (
