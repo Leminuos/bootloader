@@ -332,12 +332,24 @@ void JumpToApplication(void)
     /* Disable all interrupt */
     __disable_irq();
 
+    /* Reset peripheral register */
+    RCC->APB1RSTR.REG = 0xFFFFFFFF;
+    RCC->APB1RSTR.REG = 0x00000000;
+
+    RCC->APB2RSTR.REG = 0xFFFFFFFF;
+    RCC->APB2RSTR.REG = 0x00000000;
+
     /* Turn off System tick */
     SysTick->CTRL = 0;
     SysTick->LOAD = 0;
 
     /* Clear Pending Interrupt Request*/
     SCB->SHCSR &= ~(SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk);
+    for (int i = 0; i < 8; i++)
+    {
+        NVIC->ICER[i] = 0xFFFFFFFF;
+        NVIC->ICPR[i] = 0xFFFFFFFF;
+    }
 
     /* Set main stack pointer */
     __set_MSP(*((volatile uint32_t*) info.entry_point));
