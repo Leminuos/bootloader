@@ -5,15 +5,18 @@
 #include <stdio.h>
 
 /* Config */
+#define SUPPORT_HID                 1
+#define SUPPORT_CDC                 0
 #define DEBUG                       0
 #define PROGRAM_START_ADDRESS       0
 
 /* Size */
 #define MAX_BOOT_BUFFER_SIZE        48
-#define MAX_BOOT_REQUEST_SIZE       62
-#define MAX_BOOT_RESPONSE_SIZE      58
+#define MAX_BOOT_REQUEST_SIZE       (MAX_BOOT_BUFFER_SIZE + 14)
+#define MAX_BOOT_RESPONSE_SIZE      (MAX_BOOT_BUFFER_SIZE + 10)
 #define MAX_BOOT_CRC_SIZE           4
 #define HID_MAX_SIZE_REPORT         0x41
+#define CDC_MAX_SIZE_BUFFER         0x41
 #define FLASH_START_ADDRESS         0x08000000
 #define FLASH_MAX_SIZE              0x10000
 #define RAM_START_ADDRESS           0x20000000

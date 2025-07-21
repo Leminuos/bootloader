@@ -24,12 +24,18 @@
     <ClCompile Include="mem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hid.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="mem.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cdc.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

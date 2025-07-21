@@ -129,11 +129,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cdc.c" />
     <ClCompile Include="hid.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="mem.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cdc.h" />
     <ClInclude Include="hid.h" />
     <ClInclude Include="mem.h" />
   </ItemGroup>

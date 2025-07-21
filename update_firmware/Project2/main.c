@@ -3,10 +3,15 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "hid.h"
 #include "mem.h"
 
-#define MAX_COUNTER_FAIL    1000
+#if SUPPORT_HID
+#include "hid.h"
+#elif SUPPORT_CDC
+#include "cdc.h"
+#endif
+
+#define MAX_COUNTER_FAIL            1000
 
 VOID Usage(VOID);
 
@@ -22,7 +27,11 @@ int main(int argc, char** argv)
 
     printf("Please plug usb device");
 
+#if SUPPORT_HID
     while (FindHidDevice() == HID_FAILED)
+#elif SUPPORT_CDC
+    while (FindCdcDevice() == CDC_FAILED)
+#endif /* SUPPORT_CDC */
     {
         ++cnt;
         if (cnt == MAX_COUNTER_FAIL)
@@ -35,6 +44,14 @@ int main(int argc, char** argv)
     }
 
     printf("\r\nUsb device found\r\n");
+
+#if SUPPORT_CDC
+    if (ConfigComState() == CDC_FAILED)
+    {
+        printf("Config CDC failed\r\n");
+        return 3;
+    }
+#endif /* SUPPORT_CDC */
 
     if (strcmp(argv[1], "-f") == 0)
     {
