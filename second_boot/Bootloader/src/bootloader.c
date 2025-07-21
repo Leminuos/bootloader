@@ -329,6 +329,8 @@ void JumpToApplication(void)
 {
     DEBUG(LOG_DEBUG, TAG, "Jump to address -> 0x%08X", info.entry_point);
 
+    delay(20);
+
     /* Disable all interrupt */
     __disable_irq();
 
