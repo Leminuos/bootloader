@@ -68,7 +68,7 @@ static uint8_t USB_BufferDescTable(uint8_t ep, uint16_t addr, uint16_t count)
 
         if (count > 62U)
         {
-            bCount = count >> 6U;
+            bCount = (count >> 5U) - 1;
             bCount = bCount << 10;
             bCount = bCount | 0x8000;   // Set BL_SIZE
         }
