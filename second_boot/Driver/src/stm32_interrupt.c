@@ -146,6 +146,7 @@ void TIM2_IRQHandler(void)
     }
 }
 
+#if 0
 void USB_LP_CAN1_RX0_IRQHandler(void)
 {
     if (USB->ISTR.BITS.RESET != RESET)
@@ -178,3 +179,5 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
         USB->ISTR.BITS.SUSP = 0;
     }
 }
+#endif
+
