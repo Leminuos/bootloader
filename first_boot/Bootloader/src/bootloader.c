@@ -9,6 +9,20 @@
 #include "uECC.h"
 #include "sha-256.h"
 
+#if SUPPORT_USB_HID && SUPPORT_USB_CDC
+#error "You can only choose one of HID or CDC"
+#endif
+
+#if SUPPORT_USB_HID
+#define USB_MAX_SIZE_BUFFER                 HID_MAX_SIZE_REPORT
+#define USB_ReceiveData(data)               HID_ReceiveReport(data)
+#define USB_SendData(data, length)          HID_SendReport(data)
+#elif SUPPORT_USB_CDC
+#define USB_MAX_SIZE_BUFFER                 CDC_MAX_PACKET_SIZE
+#define USB_ReceiveData(data)               CDC_Receive(data)
+#define USB_SendData(data, length)          CDC_Transmit(data, length)
+#endif
+
 static const char* TAG = STRING_TAG;
 static firmware_info_t info;
 static uint8_t spi_hash[HASH_MAX_LEN];
@@ -150,7 +164,7 @@ void RAM_ReadProgram(uint32_t address, uint32_t size, uint8_t* dst)
     for (i = 0; i < size; ++i) *dst++ = *src++;
 }
 
-static boot_state_t HandleHidRequest(uint8_t* data)
+static boot_state_t HandleRequest(uint8_t* data)
 {
     uint32_t            i = 0;
     uint32_t            crc = 0;
@@ -225,14 +239,14 @@ static boot_state_t HandleHidRequest(uint8_t* data)
     }
 
 end:
-    memset(data, 0, HID_MAX_SIZE_REPORT);
+    memset(data, 0, USB_MAX_SIZE_BUFFER);
     memcpy(data, &res, sizeof(res));
     return state;
 }
 
 void UpdateFirmware(void)
 {
-    uint8_t data[HID_MAX_SIZE_REPORT];
+    uint8_t data[USB_MAX_SIZE_BUFFER];
     boot_state_t state = BOOT_SUCCESS;
 
     // Enable timer
@@ -245,14 +259,18 @@ void UpdateFirmware(void)
     while (1)
     {
         // Receive data from USB
-        if (HID_ReceiveReport(data) > 0)
+        if (USB_ReceiveData(data) > 0)
         {
-            state = HandleHidRequest(data);
+        #if SUPPORT_USB_HID
+            state = HandleRequest(data);
+        #elif SUPPORT_USB_CDC
+            state = HandleRequest(&data[1]);
+        #endif
 
             if (state == BOOT_SUCCESS)
             {
                 // Send response back to host
-                HID_SendReport(data);
+                USB_SendData(data, USB_MAX_SIZE_BUFFER);
             }
         }
     }
