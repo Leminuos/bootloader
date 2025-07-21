@@ -95,6 +95,7 @@ void prvGetRegistersFromStack(uint32_t* pulFaultStackAddress)
     debug_print("psr : %08X\r\n", psr);
 
     // Soft reset
+    NVIC_SystemReset();
 }
 
 void EXTIConfig(void)
