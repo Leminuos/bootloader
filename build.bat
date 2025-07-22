@@ -1,10 +1,11 @@
 @echo off
 
 call env.bat
+type nul > "%LOG_FILE%"
 
 if not exist sign_tool\firmware.exe (
-    call vs_build.bat
-    copy /Y update_firmware\x64\Release\firmware.exe sign_tool\firmware.exe
+    call vs_build.bat >> "%LOG_FILE%" 2>&1
+    copy /Y update_firmware\x64\Release\firmware.exe sign_tool\firmware.exe >> "%LOG_FILE%" 2>&1
 )
 
 cd sign_tool
@@ -13,10 +14,7 @@ if not exist %PEM_KEY% (
     python gen_key.py >> "%LOG_FILE%" 2>&1
 )
 
-type nul > "%LOG_FILE%"
-
 python make_image.py -p >> "%LOG_FILE%" 2>&1
-copy /Y .\key_data.c ..\first_boot\Bootloader\src\key_data.c >> "%LOG_FILE%" 2>&1
 copy /Y .\key_data.c ..\second_boot\Bootloader\src\key_data.c >> "%LOG_FILE%" 2>&1
 
 cd ..\application
