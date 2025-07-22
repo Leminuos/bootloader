@@ -146,17 +146,30 @@ VOID BootMemAddress(UINT32 Address)
 
 VOID BootMemErase(UINT32 Size)
 {
+    UINT32 cnt = 0;
     UINT32 address = 0;
     UINT32 pages = 0;
+    BOOL result = FALSE;
 
     printf("Start erase at address 0x%08X\r\n", PROGRAM_START_ADDRESS);
 
     pages = Size / FLASH_PAGE_SIZE + 1;
 
+    print_progress(0, pages - 1);
+
     for (UINT32 page = 0; page < pages; ++page)
     {
-        SendRequest(BOOT_REQ_CMD_ERASE, page, 0, NULL);
-        ReceiveResponse(NULL, 0);
+        cnt = 0;
+
+        do
+        {
+            if (cnt == 10) return;
+            ++cnt;
+            result = SendRequest(BOOT_REQ_CMD_ERASE, page, 0, NULL);
+            if (!result) continue;
+            result = ReceiveResponse(NULL, 0);
+        } while (!result);
+
         print_progress(page, pages - 1);
     }
 
@@ -176,6 +189,8 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
+
+    print_progress(0, blocks + 1);
 
     for (i = 0; i < blocks; ++i)
     {
@@ -231,6 +246,8 @@ VOID BootMemRead(UINT8* image, UINT32 Size)
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
+
+    print_progress(0, blocks + 1);
 
     for (i = 0; i < blocks; ++i)
     {
