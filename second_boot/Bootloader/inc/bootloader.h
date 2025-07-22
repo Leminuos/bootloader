@@ -29,6 +29,8 @@
 
 #define HASH_MAX_LEN                32
 #define SIG_MAX_LEN                 64
+#define PUB_MAX_LEN                 64
+#define SUPPORT_PUBLIC_KEY          1
 #define BUFF_MAX_LEN                1024
 #define STRING_TAG                  "second boot"
 
@@ -60,14 +62,16 @@ typedef struct {
     uint32_t header;
     uint32_t version_major;
     uint32_t version_minor;
-    uint32_t reserved;
+    uint32_t use_pubkey;
     uint32_t header_size;
     uint32_t image_size;
     uint32_t image_address;
     uint32_t entry_point;
 } firmware_info_t;
 
-extern const uint8_t public_key[];
+#if SUPPORT_PUBLIC_KEY
+extern const uint8_t public_key_temp[];
+#endif /* SUPPORT_PUBLIC_KEY */
 
 extern void BootloaderInit(void);
 extern void UpdateFirmware(void);

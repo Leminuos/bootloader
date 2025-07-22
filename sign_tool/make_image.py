@@ -8,6 +8,7 @@ BOOT_OFFSET     = 0x1000
 APP_OFFSET      = 0x10000
 HASH_MAX_LEN    = 32
 SIG_MAX_LEN     = 64
+PUB_MAX_LEN     = 64
 
 sign_key        = 0
 
@@ -28,7 +29,7 @@ if args.p:
         sign_key = SigningKey.from_pem(f.read())
 
     line0 = "#include <stdint.h>"
-    line1 = "\n\nconst uint8_t public_key[] = {\n"
+    line1 = "\n\nconst uint8_t public_key_temp[] = {\n"
     line3 = "};\n"
     vk = sign_key.verifying_key
     public_key = vk.to_string()
@@ -55,7 +56,7 @@ if args.f:
         header          = int(header_obj["header"], 16)
         version_major   = int(header_obj["version_major"], 16)
         version_minor   = int(header_obj["version_minor"], 16)
-        reserved        = int(header_obj["reserved"], 16)
+        use_pubkey      = int(header_obj["use_pubkey"], 16)
         header_size     = int(header_obj["header_size"], 16)
         entry_point     = int(header_obj["entry_point"], 16)
 
@@ -65,7 +66,7 @@ if args.f:
         print("  Header       :", header_obj["header"])
         print("  Major Version:", header_obj["version_major"])
         print("  Minor Version:", header_obj["version_minor"])
-        print("  Reserved     :", header_obj["reserved"])
+        print("  Use pubkey   :", header_obj["use_pubkey"])
         print("  Header Size  :", header_obj["header_size"])
         print("  Entry Point  :", header_obj["entry_point"])
 
@@ -85,8 +86,8 @@ if args.f:
         # version_minor
         header_data += version_minor.to_bytes(4, 'little')
 
-        # reserved
-        header_data += reserved.to_bytes(4, 'little')
+        # use_pubkey
+        header_data += use_pubkey.to_bytes(4, 'little')
 
         # header_size
         header_data += header_size.to_bytes(4, 'little')
@@ -96,11 +97,20 @@ if args.f:
         header_data += image_size.to_bytes(4, 'little')
 
         # image_offset
-        image_offset = header_size + HASH_MAX_LEN + SIG_MAX_LEN
+        if use_pubkey:
+            image_offset = header_size + HASH_MAX_LEN + SIG_MAX_LEN + PUB_MAX_LEN
+        else:
+            image_offset = header_size + HASH_MAX_LEN + SIG_MAX_LEN
+        
         header_data += image_offset.to_bytes(4, 'little')
 
         # entry_point
         header_data += entry_point.to_bytes(4, 'little')
+
+        if use_pubkey:
+            vk = sign_key.verifying_key
+            public_key = vk.to_string()
+            header_data += bytearray(public_key)
 
         final[offset:offset + len(header_data)] = header_data
         offset = offset + len(header_data)

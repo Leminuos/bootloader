@@ -29,6 +29,7 @@ static uint8_t spi_hash[HASH_MAX_LEN];
 static uint8_t data_hash[HASH_MAX_LEN];
 static uint8_t signature[SIG_MAX_LEN];
 static uint8_t spi_buffer[BUFF_MAX_LEN];
+static uint8_t public_key[PUB_MAX_LEN];
 
 typedef void (*app_entry_t)(void);
 
@@ -85,14 +86,37 @@ static int fw_verify(uint32_t fw_address)
     memset(signature, 0, sizeof(signature));
 
     W25QXX_ReadData(addr, (uint8_t*)&info, sizeof(info));
+    addr = addr + sizeof(info);
     DEBUG(LOG_INFO, TAG, "version: %d.%d", info.version_major, info.version_minor);
     DEBUG(LOG_INFO, TAG, "header size: %08X", info.header_size);
     DEBUG(LOG_INFO, TAG, "image size: %08X", info.image_size);
     DEBUG(LOG_INFO, TAG, "image address: %08X", info.image_address);
     DEBUG(LOG_INFO, TAG, "entry point: %08X", info.entry_point);
 
-    calc_sha_256(data_hash, (const void*)&info, sizeof(info));
-    addr = addr + sizeof(info);
+    if (info.use_pubkey == 1)
+    {
+        for (uint32_t i = 0; i < PUB_MAX_LEN; ++i)
+        {
+            W25QXX_ReadByte(addr + i, &public_key[i]);
+        }
+
+        addr = addr + PUB_MAX_LEN;
+        sha_256_init(&sha_256, data_hash);
+        sha_256_write(&sha_256, (const void*)&info, sizeof(info));
+        sha_256_write(&sha_256, (const void*)&public_key, PUB_MAX_LEN);
+        (void)sha_256_close(&sha_256);
+    }
+    else
+    {
+    #if SUPPORT_PUBLIC_KEY
+        memcpy(public_key, public_key_temp, PUB_MAX_LEN);
+    #endif /* SUPPORT_PUBLIC_KEY */
+    
+        sha_256_init(&sha_256, data_hash);
+        sha_256_write(&sha_256, (const void*)&info, sizeof(info));
+        (void)sha_256_close(&sha_256);
+    }
+
     W25QXX_ReadData(addr, spi_hash, HASH_MAX_LEN);
     ret = compare_hash(spi_hash, data_hash);
     if (ret == 0)
