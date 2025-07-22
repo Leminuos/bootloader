@@ -71,6 +71,19 @@ static int compare_hash(uint8_t* str1, uint8_t* str2)
     return 1;
 }
 
+static void print_buffer(uint8_t* buffer, uint32_t length)
+{
+    uint32_t i = 0;
+
+    for (i = 0; i < length; ++i)
+    {
+        if ((i != 0) && (i % 0x10) == 0) debug_print("\r\n");
+        debug_print("%02X ", buffer[i]);
+    }
+
+    debug_print("\r\n\r\n");
+}
+
 static int fw_verify(uint32_t fw_address)
 {
     int ret = 0;
@@ -118,6 +131,12 @@ static int fw_verify(uint32_t fw_address)
     }
     
     W25QXX_ReadData(addr, spi_hash, HASH_MAX_LEN);
+
+    DEBUG(LOG_VERBOSE, TAG, "Header hash:");
+    print_buffer(data_hash, HASH_MAX_LEN);
+    DEBUG(LOG_VERBOSE, TAG, "SPI hash:");
+    print_buffer(spi_hash, HASH_MAX_LEN);
+
     ret = compare_hash(spi_hash, data_hash);
     if (ret == 0)
     {
@@ -153,6 +172,12 @@ static int fw_verify(uint32_t fw_address)
     addr = addr + last_chunk_size;
     (void)sha_256_close(&sha_256);
     W25QXX_ReadData(addr, spi_hash, HASH_MAX_LEN);
+
+    DEBUG(LOG_VERBOSE, TAG, "Image hash:");
+    print_buffer(data_hash, HASH_MAX_LEN);
+    DEBUG(LOG_VERBOSE, TAG, "SPI hash:");
+    print_buffer(spi_hash, HASH_MAX_LEN);
+
     ret = compare_hash(spi_hash, data_hash);
     if (ret == 0)
     {
