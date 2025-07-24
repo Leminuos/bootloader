@@ -8,7 +8,6 @@
 #define SUPPORT_HID                 1
 #define SUPPORT_CDC                 0
 #define DEBUG                       0
-#define PROGRAM_START_ADDRESS       0
 
 /* Size */
 #define MAX_BOOT_BUFFER_SIZE        48
@@ -21,13 +20,12 @@
 #define FLASH_MAX_SIZE              0x10000
 #define RAM_START_ADDRESS           0x20000000
 #define RAM_SIZE_MAX                0x5000
-#define FLASH_PAGE_SIZE             1024
+#define FLASH_SECTOR_SIZE           4096
 
 /* Request command */
 #define BOOT_REQ_CMD_ERASE          0x00
 #define BOOT_REQ_CMD_READ           0x01
 #define BOOT_REQ_CMD_WRITE          0x02
-#define BOOT_REQ_CMD_ADDRESS        0x03
 #define BOOT_REQ_CMD_RESET          0xFE
 #define BOOT_REQ_CMD_VERSION        0xFF
 
@@ -56,11 +54,9 @@ typedef struct {
 #pragma pack(pop)
 
 extern VOID BootReset(VOID);
-extern VOID BootFlashImage(CHAR* FileName);
-extern VOID BootMemErase(UINT32 Size);
-extern VOID BootMemAddress(UINT32 Address);
-extern VOID BootMemRead(UINT8* image, UINT32 Size);
-extern VOID BootMemWrite(UINT8* Image, UINT32 Size);
+extern VOID BootMemErase(UINT32 Address, UINT32 Size);
+extern VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size);
+extern VOID BootMemWrite(UINT32 Address, UINT8* Image, UINT32 Size);
 
 #endif /* __MEM_H__ */
 

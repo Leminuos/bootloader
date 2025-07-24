@@ -11,9 +11,13 @@
 #include "cdc.h"
 #endif
 
+#define PROGRAM_START_ADDRESS       0
+#define FILE_BIN_OUT                "read_image.bin"
 #define MAX_COUNTER_FAIL            1000
 
 VOID Usage(VOID);
+VOID BootFlashImage(UINT32 Address, CHAR* FileName);
+VOID BootDumpImage(UINT32 Address, UINT32 Size);
 
 int main(int argc, char** argv)
 {
@@ -55,7 +59,12 @@ int main(int argc, char** argv)
 
     if (strcmp(argv[1], "-f") == 0)
     {
-        BootFlashImage(argv[2]);
+        BootFlashImage(PROGRAM_START_ADDRESS, argv[2]);
+    }
+
+    if (strcmp(argv[1], "-d") == 0)
+    {
+        BootDumpImage(strtol(argv[2], NULL, 0), strtol(argv[3], NULL, 0));
     }
 
     CloseHandle(hDevice);
@@ -68,13 +77,42 @@ VOID Usage(VOID)
     printf("Usage: Bootloader.exe -f [bin-file]");
 }
 
-VOID BootFlashImage(CHAR* FileName)
+VOID BootDumpImage(UINT32 Address, UINT32 Size)
 {
-    FILE* FileHandle                    = NULL;
-    UINT8* WriteImage                   = NULL;
-    UINT8* ReadImage                    = NULL;
-    UINT32 FileSize                     = 0;
-    UINT64 result                       = 0;
+    FILE* FileHandle    = NULL;
+    UINT8* ReadImage    = NULL;
+
+    FileHandle = fopen(FILE_BIN_OUT, "wb");
+
+    if (FileHandle == NULL)
+    {
+        printf("Can't open file %s\r\n", FILE_BIN_OUT);
+        exit(3);
+    }
+
+    /* Allocate memory to contain the whole file */
+    ReadImage = (UINT8*)malloc(sizeof(UINT8) * Size);
+    if (ReadImage == NULL)
+    {
+        printf("Memory error\r\n");
+        fclose(FileHandle);
+        exit(4);
+    }
+
+    BootMemRead(Address, ReadImage, Size);
+
+    fwrite(ReadImage, sizeof(UINT8), Size, FileHandle);
+    free(ReadImage);
+    fclose(FileHandle);
+}
+
+VOID BootFlashImage(UINT32 Address, CHAR* FileName)
+{
+    FILE* FileHandle    = NULL;
+    UINT8* WriteImage   = NULL;
+    UINT8* ReadImage    = NULL;
+    UINT32 FileSize     = 0;
+    UINT64 result       = 0;
 
     /* Open file */
     FileHandle = fopen(FileName, "rb");
@@ -112,13 +150,13 @@ VOID BootFlashImage(CHAR* FileName)
     }
 
     /* Erase */
-    BootMemErase(FileSize);
+    BootMemErase(Address, FileSize);
 
     /* Programming */
-    BootMemWrite(WriteImage, FileSize);
+    BootMemWrite(Address, WriteImage, FileSize);
 
     /* Verify */
-    BootMemRead(ReadImage, FileSize);
+    BootMemRead(Address, ReadImage, FileSize);
     if (strcmp(ReadImage, WriteImage) == 0)
     {
         printf("Verify successfully\r\n");
@@ -128,8 +166,14 @@ VOID BootFlashImage(CHAR* FileName)
     free(WriteImage);
     fclose(FileHandle);
 
-    FileHandle = fopen("read_image.bin", "wb");
+    FileHandle = fopen(FILE_BIN_OUT, "wb");
+    if (FileHandle == NULL)
+    {
+        printf("Can't open file %s\r\n", FILE_BIN_OUT);
+        exit(6);
+    }
     fwrite(ReadImage, sizeof(UINT8), FileSize, FileHandle);
+    free(ReadImage);
     fclose(FileHandle);
 }
 

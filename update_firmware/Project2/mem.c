@@ -138,22 +138,15 @@ VOID BootReset(VOID)
     SendRequest(BOOT_REQ_CMD_RESET, 0, 0, NULL);
 }
 
-VOID BootMemAddress(UINT32 Address)
-{
-    SendRequest(BOOT_REQ_CMD_ADDRESS, Address, 0, NULL);
-    ReceiveResponse(NULL, 0);
-}
-
-VOID BootMemErase(UINT32 Size)
+VOID BootMemErase(UINT32 Address, UINT32 Size)
 {
     UINT32 cnt = 0;
-    UINT32 address = 0;
     UINT32 pages = 0;
     BOOL result = FALSE;
 
-    printf("Start erase at address 0x%08X\r\n", PROGRAM_START_ADDRESS);
+    printf("Start erase at address 0x%08X\r\n", Address);
 
-    pages = Size / FLASH_PAGE_SIZE + 1;
+    pages =  (Address + Size)/FLASH_SECTOR_SIZE + 1;
 
     print_progress(0, pages - 1);
 
@@ -176,16 +169,16 @@ VOID BootMemErase(UINT32 Size)
     printf("\r\n\r\n");
 }
 
-VOID BootMemWrite(UINT8* image, UINT32 Size)
+VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
 {
     UINT32 i = 0;
     UINT32 cnt = 0;
     UINT32 blocks = 0;
     UINT32 nonblock = 0;
-    UINT32 address = 0;
+    UINT32 offset = 0;
     BOOL result = FALSE;
 
-    printf("Start write program at address 0x%08X\r\n", PROGRAM_START_ADDRESS);
+    printf("Start write program at address 0x%08X\r\n", Address);
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
@@ -195,7 +188,7 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
     for (i = 0; i < blocks; ++i)
     {
         cnt = 0;
-        address = PROGRAM_START_ADDRESS + MAX_BOOT_BUFFER_SIZE * i;
+        offset = Address + MAX_BOOT_BUFFER_SIZE * i;
 
         do
         {
@@ -203,7 +196,7 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
             ++cnt;
             result = SendRequest(
                 BOOT_REQ_CMD_WRITE,
-                address,
+                offset,
                 MAX_BOOT_BUFFER_SIZE,
                 image + (MAX_BOOT_BUFFER_SIZE * i));
             if (!result) continue;
@@ -214,7 +207,7 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
     }
 
     cnt = 0;
-    address = PROGRAM_START_ADDRESS + MAX_BOOT_BUFFER_SIZE * blocks;
+    offset = Address + MAX_BOOT_BUFFER_SIZE * blocks;
 
     do
     {
@@ -222,7 +215,7 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
         ++cnt;
         result = SendRequest(
             BOOT_REQ_CMD_WRITE,
-            address,
+            offset,
             nonblock,
             image + (MAX_BOOT_BUFFER_SIZE * blocks));
         if (!result) continue;
@@ -233,16 +226,16 @@ VOID BootMemWrite(UINT8* image, UINT32 Size)
     printf("\r\n\r\n");
 }
 
-VOID BootMemRead(UINT8* image, UINT32 Size)
+VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size)
 {
     UINT32 i = 0;
     UINT32 cnt = 0;
     UINT32 blocks = 0;
     UINT32 nonblock = 0;
-    UINT32 address = 0;
+    UINT32 offset = 0;
     BOOL result = FALSE;
 
-    printf("Start read program at address 0x%08X\r\n", PROGRAM_START_ADDRESS);
+    printf("Start read program at address 0x%08X\r\n", Address);
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
@@ -252,13 +245,13 @@ VOID BootMemRead(UINT8* image, UINT32 Size)
     for (i = 0; i < blocks; ++i)
     {
         cnt = 0;
-        address = PROGRAM_START_ADDRESS + MAX_BOOT_BUFFER_SIZE * i;
+        offset = Address + MAX_BOOT_BUFFER_SIZE * i;
 
         do
         {
             if (cnt == 10) return;
             ++cnt;
-            result = SendRequest(BOOT_REQ_CMD_READ, address, 0, NULL);
+            result = SendRequest(BOOT_REQ_CMD_READ, offset, 0, NULL);
             if (!result) continue;
             result = ReceiveResponse(image + (MAX_BOOT_BUFFER_SIZE * i), MAX_BOOT_BUFFER_SIZE);
         } while (!result);
@@ -267,13 +260,13 @@ VOID BootMemRead(UINT8* image, UINT32 Size)
     }
 
     cnt = 0;
-    address = PROGRAM_START_ADDRESS + MAX_BOOT_BUFFER_SIZE * blocks;
+    offset = Address + MAX_BOOT_BUFFER_SIZE * blocks;
 
     do
     {
         if (cnt == 10) return;
         ++cnt;
-        result = SendRequest(BOOT_REQ_CMD_READ, address, 0, NULL);
+        result = SendRequest(BOOT_REQ_CMD_READ, offset, 0, NULL);
         if (!result) continue;
         result = ReceiveResponse(image + (MAX_BOOT_BUFFER_SIZE * blocks), nonblock);
     } while (!result);
