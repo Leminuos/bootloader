@@ -10,21 +10,22 @@
 #define RAM_START_ADDRESS           0x20000000
 #define RAM_SIZE_MAX                0x5000
 #define MAX_BOOT_BUFFER_SIZE        48
-#define MAX_BOOT_REQUEST_SIZE       (MAX_BOOT_BUFFER_SIZE + 14)
-#define MAX_BOOT_RESPONSE_SIZE      (MAX_BOOT_BUFFER_SIZE + 10)
-#define MAX_BOOT_CRC_SIZE           4
 
 /* Request command */
 #define BOOT_REQ_CMD_ERASE          0x00
 #define BOOT_REQ_CMD_READ           0x01
 #define BOOT_REQ_CMD_WRITE          0x02
-#define BOOT_REQ_CMD_RESET          0xFE
-#define BOOT_REQ_CMD_VERSION        0xFF
+#define BOOT_REQ_CMD_RESET          0x03
+#define BOOT_REQ_CMD_COMMON         0x80
 
 /* Respond status */
-#define BOOT_RES_NACK               0x00
-#define BOOT_RES_ACK                0x01
-#define BOOT_RES_VALID              0x02
+#define BOOT_RES_SUCCESS            0x00
+#define BOOT_RES_CRC_ERR            0x05
+#define BOOT_RES_PARAM_ERR          0x06
+#define BOOT_RES_LENGTH_ERR         0x07
+#define BOOT_RES_WRITE_ERR          0x08
+#define BOOT_RES_READ_ERR           0x09
+#define BOOT_RES_ERASE_ERR          0x0A
 
 #define HASH_MAX_LEN                32
 #define SIG_MAX_LEN                 64
@@ -33,28 +34,23 @@
 #define SUPPORT_PUBLIC_KEY          0
 #define STRING_TAG                  "first boot"
 
-typedef enum {
-    BOOT_SUCCESS = 0,
-    INVALID_HEADER_ERR = -1,
-    INVALID_LENGTH_ERR = -2,
-    INVALID_DATA_ERR = -3,
-} boot_state_t;
-
 typedef struct __attribute__((packed)) {
     uint32_t    header;
     uint8_t     command;
-    uint32_t    address;
     uint8_t     length;
+    uint16_t    reserved;
+    uint32_t    offset;
     uint8_t     data[MAX_BOOT_BUFFER_SIZE];
-    uint32_t    crc;
+    uint32_t    checksum;
 }  boot_packet_req_t;
 
 typedef struct __attribute__((packed)) {
     uint32_t    header;
     uint8_t     status;
     uint8_t     length;
+    uint16_t    reserved;
     uint8_t     data[MAX_BOOT_BUFFER_SIZE];
-    uint32_t    crc;
+    uint32_t    checksum;
 } boot_packet_res_t;
 
 typedef struct {
