@@ -213,90 +213,84 @@ void RAM_ReadProgram(uint32_t address, uint32_t size, uint8_t* dst)
     for (i = 0; i < size; ++i) *dst++ = *src++;
 }
 
-static boot_state_t HandleRequest(uint8_t* data)
+static void HandleRequest(uint8_t* data)
 {
     uint32_t            i = 0;
-    uint32_t            crc = 0;
-    boot_packet_res_t   res = {0};
-    boot_packet_req_t*  req = NULL;
-    boot_state_t        state = BOOT_SUCCESS;
+    uint32_t            checksum = 0;
+    boot_packet_res_t   boot_res = {0};
+    boot_packet_req_t*  boot_req = NULL;
 
-    req = (boot_packet_req_t*)data;
-    memset(&res, 0, sizeof(res));
-    res.header = req->header;
+    boot_req = (boot_packet_req_t*)data;
+    memset(&boot_res, 0, sizeof(boot_res));
 
     // Check header
-    if (req->header != BOOT_HEADER)
+    if (boot_req->header != BOOT_HEADER)
     {
-        res.status = BOOT_RES_NACK;
-        res.length = 0;
-        state = INVALID_HEADER_ERR;
+        boot_res.status = BOOT_RES_PARAM_ERR;
+        boot_res.length = 0;
         goto end;
     }
 
     // Check length
-    if (req->length > MAX_BOOT_BUFFER_SIZE)
+    if (boot_req->length > MAX_BOOT_BUFFER_SIZE)
     {
-        res.status = BOOT_RES_NACK;
-        res.length = 0;
-        state = INVALID_LENGTH_ERR;
+        boot_res.status = BOOT_RES_LENGTH_ERR;
+        boot_res.length = 0;
         goto end;
     }
 
     // Check CRC
-    crc = CalculateCRC(data, MAX_BOOT_REQUEST_SIZE - MAX_BOOT_CRC_SIZE);
-    if (crc != req->crc)
+    checksum = CalculateCRC(data, sizeof(boot_packet_req_t) - sizeof(uint32_t));
+    if (checksum != boot_req->checksum)
     {
-        res.status = BOOT_RES_NACK;
-        res.length = 0;
-        state = INVALID_DATA_ERR;
+        boot_res.status = BOOT_RES_CRC_ERR;
+        boot_res.length = 0;
         goto end;
     }
 
-    switch (req->command)
+    switch (boot_req->command)
     {    
     case BOOT_REQ_CMD_ERASE:
-        W25QXX_EraseSector(req->address);
-        res.status = BOOT_RES_ACK;
-        res.length = 0;
-
+        W25QXX_EraseSector(boot_req->offset);
+        boot_res.status = BOOT_RES_SUCCESS;
+        boot_res.length = 0;
         break;
 
     case BOOT_REQ_CMD_READ:
-        for (i = 0; i < MAX_BOOT_BUFFER_SIZE; ++i) W25QXX_ReadByte(req->address + i, &res.data[i]);
-        res.status = BOOT_RES_ACK;
-        res.length = MAX_BOOT_BUFFER_SIZE;
-
+        for (i = 0; i < MAX_BOOT_BUFFER_SIZE; ++i) W25QXX_ReadByte(boot_req->offset + i, &boot_res.data[i]);
+        boot_res.status = BOOT_RES_SUCCESS;
+        boot_res.length = MAX_BOOT_BUFFER_SIZE;
         break;
 
     case BOOT_REQ_CMD_WRITE:
-        for (i = 0; i < req->length; ++i) W25QXX_WriteByte(req->address + i, req->data[i]);
-        res.status = BOOT_RES_ACK;
-        res.length = 0;
-        
+        for (i = 0; i < boot_req->length; ++i) W25QXX_WriteByte(boot_req->offset + i, boot_req->data[i]);
+        boot_res.status = BOOT_RES_SUCCESS;
+        boot_res.length = 0;
         break;
 
     case BOOT_REQ_CMD_RESET:
         NVIC_SystemReset();
         break;
     
-    case BOOT_REQ_CMD_VERSION:
+    case BOOT_REQ_CMD_COMMON:
         break;
     
     default:
+        boot_res.status = BOOT_RES_PARAM_ERR;
+        boot_res.length = 0;
         break;
     }
 
 end:
+	boot_res.header   = BOOT_HEADER;
+    boot_res.reserved = 0xFFFF;
     memset(data, 0, USB_MAX_SIZE_BUFFER);
-    memcpy(data, &res, sizeof(res));
-    return state;
+    memcpy(data, &boot_res, sizeof(boot_res));
 }
 
 void UpdateFirmware(void)
 {
     uint8_t data[USB_MAX_SIZE_BUFFER];
-    boot_state_t state = BOOT_SUCCESS;
 
     // Enable timer
     TIM2->DIER.BITS.UIE = 0x01;
@@ -311,16 +305,13 @@ void UpdateFirmware(void)
         if (USB_ReceiveData(data) > 0)
         {
         #if SUPPORT_USB_HID
-            state = HandleRequest(data);
+            HandleRequest(data);
         #elif SUPPORT_USB_CDC
-            state = HandleRequest(&data[1]);
+            HandleRequest(&data[1]);
         #endif
 
-            if (state == BOOT_SUCCESS)
-            {
-                // Send response back to host
-                USB_SendData(data, USB_MAX_SIZE_BUFFER);
-            }
+            // Send response back to host
+            USB_SendData(data, USB_MAX_SIZE_BUFFER);
         }
     }
 }
