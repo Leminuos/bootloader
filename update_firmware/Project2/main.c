@@ -16,8 +16,8 @@
 #define MAX_COUNTER_FAIL            1000
 
 VOID Usage(VOID);
-VOID BootFlashImage(UINT32 Address, CHAR* FileName);
-VOID BootDumpImage(UINT32 Address, UINT32 Size);
+VOID BootFlashImage(UINT32 Offset, CHAR* FileName);
+VOID BootDumpImage(UINT32 Offset, UINT32 Size);
 
 int main(int argc, char** argv)
 {
@@ -77,7 +77,7 @@ VOID Usage(VOID)
     printf("Usage: Bootloader.exe -f [bin-file]");
 }
 
-VOID BootDumpImage(UINT32 Address, UINT32 Size)
+VOID BootDumpImage(UINT32 Offset, UINT32 Size)
 {
     FILE* FileHandle    = NULL;
     UINT8* ReadImage    = NULL;
@@ -99,14 +99,14 @@ VOID BootDumpImage(UINT32 Address, UINT32 Size)
         exit(4);
     }
 
-    BootMemRead(Address, ReadImage, Size);
+    BootMemRead(Offset, ReadImage, Size);
 
     fwrite(ReadImage, sizeof(UINT8), Size, FileHandle);
     free(ReadImage);
     fclose(FileHandle);
 }
 
-VOID BootFlashImage(UINT32 Address, CHAR* FileName)
+VOID BootFlashImage(UINT32 Offset, CHAR* FileName)
 {
     FILE* FileHandle    = NULL;
     UINT8* WriteImage   = NULL;
@@ -150,13 +150,13 @@ VOID BootFlashImage(UINT32 Address, CHAR* FileName)
     }
 
     /* Erase */
-    BootMemErase(Address, FileSize);
+    BootMemErase(Offset, FileSize);
 
     /* Programming */
-    BootMemWrite(Address, WriteImage, FileSize);
+    BootMemWrite(Offset, WriteImage, FileSize);
 
     /* Verify */
-    BootMemRead(Address, ReadImage, FileSize);
+    BootMemRead(Offset, ReadImage, FileSize);
     if (strcmp(ReadImage, WriteImage) == 0)
     {
         printf("Verify successfully\r\n");

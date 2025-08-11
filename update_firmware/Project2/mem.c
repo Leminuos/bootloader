@@ -58,7 +58,7 @@ static void print_progress(int current, int max) {
     fflush(stdout);
 }
 
-static BOOLEAN SendRequest(UINT8 command, UINT32 address, UINT8 length, UINT8* data)
+static BOOLEAN SendRequest(UINT8 command, UINT32 offset, UINT8 length, UINT8* data)
 {
     BOOL result = FALSE;
     DWORD bytesWrite = 0;
@@ -69,11 +69,12 @@ static BOOLEAN SendRequest(UINT8 command, UINT32 address, UINT8 length, UINT8* d
     request.header = 0x424C4443;
     request.command = command;
     request.length = length;
-    request.address = address;
+    request.reserved = 0xFFFF;
+    request.offset = offset;
     memcpy(request.data, data, length);
-    request.crc = CalculateCRC((UINT8*)&request, MAX_BOOT_REQUEST_SIZE - MAX_BOOT_CRC_SIZE);
+    request.crc = CalculateCRC((UINT8*)&request, sizeof(request) - sizeof(request.crc));
 
-    memcpy(buffer + 1, &request, MAX_BOOT_REQUEST_SIZE);
+    memcpy(buffer + 1, &request, sizeof(request));
     result = WriteFile(hDevice, buffer, EP_MAX_SIZE, &bytesWrite, NULL);
 
 #if DEBUG
@@ -109,7 +110,7 @@ BOOLEAN ReceiveResponse(UINT8* data, UINT8 length)
 
             if (response.header == 0x424C4443)
             {
-                if (response.status == BOOT_RES_ACK)
+                if (response.status == BOOT_RES_SUCCESS)
                 {
                     if (data)
                     {
@@ -138,15 +139,15 @@ VOID BootReset(VOID)
     SendRequest(BOOT_REQ_CMD_RESET, 0, 0, NULL);
 }
 
-VOID BootMemErase(UINT32 Address, UINT32 Size)
+VOID BootMemErase(UINT32 Offset, UINT32 Size)
 {
     UINT32 cnt = 0;
     UINT32 pages = 0;
     BOOL result = FALSE;
 
-    printf("Start erase at address 0x%08X\r\n", Address);
+    printf("Start erase at address 0x%08X\r\n", Offset);
 
-    pages =  (Address + Size)/FLASH_SECTOR_SIZE + 1;
+    pages =  (Offset + Size)/FLASH_SECTOR_SIZE + 1;
 
     print_progress(0, pages - 1);
 
@@ -169,7 +170,7 @@ VOID BootMemErase(UINT32 Address, UINT32 Size)
     printf("\r\n\r\n");
 }
 
-VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
+VOID BootMemWrite(UINT32 Offset, UINT8* image, UINT32 Size)
 {
     UINT32 i = 0;
     UINT32 cnt = 0;
@@ -178,7 +179,7 @@ VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
     UINT32 offset = 0;
     BOOL result = FALSE;
 
-    printf("Start write program at address 0x%08X\r\n", Address);
+    printf("Start write program at address 0x%08X\r\n", Offset);
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
@@ -188,7 +189,7 @@ VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
     for (i = 0; i < blocks; ++i)
     {
         cnt = 0;
-        offset = Address + MAX_BOOT_BUFFER_SIZE * i;
+        offset = Offset + MAX_BOOT_BUFFER_SIZE * i;
 
         do
         {
@@ -207,7 +208,7 @@ VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
     }
 
     cnt = 0;
-    offset = Address + MAX_BOOT_BUFFER_SIZE * blocks;
+    offset = Offset + MAX_BOOT_BUFFER_SIZE * blocks;
 
     do
     {
@@ -226,7 +227,7 @@ VOID BootMemWrite(UINT32 Address, UINT8* image, UINT32 Size)
     printf("\r\n\r\n");
 }
 
-VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size)
+VOID BootMemRead(UINT32 Offset, UINT8* image, UINT32 Size)
 {
     UINT32 i = 0;
     UINT32 cnt = 0;
@@ -235,7 +236,7 @@ VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size)
     UINT32 offset = 0;
     BOOL result = FALSE;
 
-    printf("Start read program at address 0x%08X\r\n", Address);
+    printf("Start read program at address 0x%08X\r\n", Offset);
 
     blocks = Size / MAX_BOOT_BUFFER_SIZE;
     nonblock = Size % MAX_BOOT_BUFFER_SIZE;
@@ -245,7 +246,7 @@ VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size)
     for (i = 0; i < blocks; ++i)
     {
         cnt = 0;
-        offset = Address + MAX_BOOT_BUFFER_SIZE * i;
+        offset = Offset + MAX_BOOT_BUFFER_SIZE * i;
 
         do
         {
@@ -260,7 +261,7 @@ VOID BootMemRead(UINT32 Address, UINT8* image, UINT32 Size)
     }
 
     cnt = 0;
-    offset = Address + MAX_BOOT_BUFFER_SIZE * blocks;
+    offset = Offset + MAX_BOOT_BUFFER_SIZE * blocks;
 
     do
     {
