@@ -151,7 +151,7 @@ VOID BootMemErase(UINT32 Offset, UINT32 Size)
 
     print_progress(0, pages - 1);
 
-    for (UINT32 page = 0; page < pages; ++page)
+    for (UINT32 page = Offset/FLASH_SECTOR_SIZE; page < pages; ++page)
     {
         cnt = 0;
 

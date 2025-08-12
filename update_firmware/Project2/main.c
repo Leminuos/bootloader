@@ -22,6 +22,7 @@ VOID BootDumpImage(UINT32 Offset, UINT32 Size);
 int main(int argc, char** argv)
 {
     int cnt = 0;
+    int ProgOffset = 0;
 
     if (argc < 3)
     {
@@ -59,7 +60,8 @@ int main(int argc, char** argv)
 
     if (strcmp(argv[1], "-f") == 0)
     {
-        BootFlashImage(PROGRAM_START_ADDRESS, argv[2]);
+        if (argc == 4) ProgOffset = strtol(argv[3], NULL, 0);
+        BootFlashImage(ProgOffset, argv[2]);
     }
 
     if (strcmp(argv[1], "-d") == 0)
@@ -74,7 +76,9 @@ int main(int argc, char** argv)
 
 VOID Usage(VOID)
 {
-    printf("Usage: Bootloader.exe -f [bin-file]");
+    printf("Usage:\r\n");
+    printf("Bootloader.exe -f [bin-file] [Offset]\r\n");
+    printf("Bootloader.exe -d [Offset] [Size]\r\n");
 }
 
 VOID BootDumpImage(UINT32 Offset, UINT32 Size)
