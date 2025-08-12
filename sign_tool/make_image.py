@@ -3,7 +3,7 @@ import hashlib
 import argparse
 from ecdsa import SigningKey
 
-BIN_SIZE        = 0x40000
+BIN_SIZE        = 0x20000
 BOOT_OFFSET     = 0x1000
 APP_OFFSET      = 0x10000
 HASH_MAX_LEN    = 32
@@ -139,4 +139,7 @@ if args.f:
 
     with open("firmware.bin", "wb") as f:
         f.write(final)
+    
+    with open("application.bin", "wb") as f:
+        f.write(final[APP_OFFSET:offset])
 

@@ -27,5 +27,13 @@ copy /Y Build\second_boot.bin ..\sign_tool\second_boot.bin >> "%LOG_FILE%" 2>&1
 
 cd ..\sign_tool
 python make_image.py -f >> "%LOG_FILE%" 2>&1
+del key_data.c
+del second_boot.bin
 
-firmware.exe -f firmware.bin
+if "%LOAD_TYPE%"=="LOAD_FULL" (
+    firmware.exe -f firmware.bin
+)
+
+if "%LOAD_TYPE%"=="LOAD_APPL" (
+    firmware.exe -f application.bin 0x10000
+)
